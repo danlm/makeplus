@@ -1,0 +1,541 @@
+<book>
+  <bookinfo>
+    <title><application>make+</application> users manual</title>
+    <authorgroup>
+      <author>
+	<firstname>Richard</firstname>
+	<othername>W.M.</othername>
+	<surname>Jones</surname>
+      </author>
+    </authorgroup>
+
+    <date>21st December 2002</date>
+    <releaseinfo>1.0</releaseinfo>
+
+    <abstract>
+      <para>
+	<application>make+</application> is an advanced build system
+	designed to replace the functionality of
+	<application>autoconf</application>,
+	<application>automake</application>, and packaging systems
+	such as <application>rpm</application>. Using a single control
+	file, maintainers and end users can build and install the
+	program, build RPMs, Debian packagages and other package
+	formats, and maintain a website.
+	<application>make+</application> is just a set of GNU
+	<application>make</application> snippets and shell scripts,
+	making it simple to maintain and extend.
+      </para>
+    </abstract>
+
+    <keywordset>
+      <keyword>make+</keyword>
+      <keyword>make</keyword>
+      <keyword>automake</keyword>
+      <keyword>autoconf</keyword>
+      <keyword>rpm</keyword>
+      <keyword>deb</keyword>
+      <keyword>dpkg</keyword>
+      <keyword>package</keyword>
+    </keywordset>
+  </bookinfo>
+
+  <chapter>
+    <title>Introduction</title>
+
+    <para>
+      <application>make+</application> is an advanced build system
+      designed to replace the functionality of
+      <application>autoconf</application>,
+      <application>automake</application>, and packaging systems such
+      as <application>rpm</application>. Using a single control file,
+      maintainers and end users can build and install the program,
+      build RPMs, Debian packagages and other package formats, and
+      maintain a website.
+    </para>
+
+    <para>
+      At the same time, <application>make+</application> is just a set
+      of GNU <application>make</application> snippets and shell
+      scripts, making it simple to maintain and extend.
+    </para>
+
+    <para>
+      This manual explains how to convert your own package to use
+      <application>make+</application>. If you have been presented
+      with a package which contains a <filename>Makefile+</filename>
+      file and you want to know how to use <command>make+</command> to
+      build and install this package, then please read the
+      <command>make+(1)</command> manual page.
+    </para>
+
+  </chapter>
+
+  <chapter id="theory-of-operation">
+    <title><application>make+</application> theory of operation</title>
+
+    <para>
+      A <application>make+</application>-enabled package
+      contains a single file called <filename>Makefile+</filename>
+      located in the top-level source directory.
+      <application>make+</application> should never
+      be used recursively, so you will not need more than
+      one <filename>Makefile+</filename> file even if your
+      package source contains subdirectories.
+    </para>
+
+    <para>
+      <application>make+</application> has the notion of a "pristine"
+      source directory. This means that
+      <application>make+</application> should never create
+      intermediate files (object files, Java class files and the like)
+      directly in the source directory. Instead,
+      <application>make+</application> creates a build directory
+      before it starts to store intermediate build files. Normally
+      this directory is called something like
+      <filename>build-i686-unknown-linux</filename> but it may, of
+      course, be something different on your particular machine and
+      operating system.
+    </para>
+
+    <para>
+      The <command>make+</command> command is a shell script
+      which performs the following steps:
+    </para>
+
+    <itemizedlist>
+      <listitem>
+	<para> Creates the build directory if it doesn't exist already. </para>
+      </listitem>
+      <listitem>
+	<para> Change into the build directory, ie.
+	  <command>cd build-foo-bar</command> </para>
+      </listitem>
+      <listitem>
+	<para> Set the GNU <application>make</application> environment
+	  variable <envar>MAKEFILES</envar>. This causes GNU
+	  <application>make</application> to load the
+	  <application>make+</application> library first. </para>
+      </listitem>
+      <listitem>
+	<para> Run <command>gmake -f ../Makefile+</command>. Because
+	  <envar>MAKEFILES</envar> has been set, GNU make will
+	  first load the <application>make+</application> library,
+	  and second load <filename>Makefile+</filename> from the
+	  top level of the source directory. </para>
+      </listitem>
+    </itemizedlist>
+
+    <para>
+      Because <application>make+</application> runs in the
+      build subdirectory, intermediate files shouldn't
+      pollute the source directory. For this reason,
+      <application>make+</application> can use a very
+      simple scheme when it builds a source tarball of
+      the package: it just treats every file in the source
+      directory as a source file, ignoring only the
+      build subdirectory itself and files with names
+      like <filename>foo~</filename> and <filename>CVS</filename>.
+    </para>
+
+  </chapter>
+
+  <chapter>
+    <title>Compiling a package which has been converted to use
+      <application>make+</application></title>
+
+    <para>
+      If you have been given an application which has been
+      converted to use <application>make+</application> already
+      and you just want to compile it, then you're likely to
+      read the generic <filename>INSTALL</filename> file and
+      follow those instructions. This chapter explains the
+      steps needed to compile an application, but also covers
+      what's happening "behind the scenes" at each step.
+    </para>
+
+    <para>
+      The basic steps for compiling a <application>make+</application>-enabled
+      application are:
+    </para>
+
+    <itemizedlist>
+      <listitem>
+	<para> Configure the application using
+	  <command>./configure</command> </para>
+      </listitem>
+      <listitem>
+	<para> Compile the application by typing
+	  <command>make+</command> </para>
+      </listitem>
+      <listitem>
+	<para> Run any supplied tests by typing
+	  <command>make+ test</command> </para>
+      </listitem>
+      <listitem>
+	<para> Install the application (as root) with
+	  <command>make+ install</command> </para>
+      </listitem>
+    </itemizedlist>
+
+    <para>
+      But what is actually happening at each step?
+    </para>
+
+    <sect1>
+      <title>Configuration</title>
+
+      <para>
+	The configuration step sets up the installation paths and then
+	examines the system looking for required and optional programs
+	and libraries.
+      </para>
+
+      <para>
+	We can imagine a fictional C debugging library. This requires
+	the GNU <application>bfd</application> library to read
+	executables. In addition, if the Linux-specific
+	<function>backtrace</function> function is present in
+	<application>libc</application>, then our fictional library
+	can present more readable stack traces when a program
+	crashes. The configure step for this library would first
+	examine the system looking for the GNU
+	<application>bfd</application> library. If not found, it would
+	stop with an error, telling the user that they must install
+	this library. It would then look for the
+	<function>backtrace</function> function, but if this function
+	was not present, it would not be a fatal error.
+      </para>
+
+      <para>
+	During the configuration step is also the point where we
+	specify where we want to install the program. Normally
+	users will be interested in setting the <envar>prefix</envar>
+	variable which controls the overall location of the
+	installation. It defaults to <filename>/usr/local</filename>
+	which causes most files to be installed in subdirectories
+	of this directory, but some users will want to change
+	the prefix, commonly to <filename>/usr</filename>.
+      </para>
+
+      <para>
+	The result of the configuration step is three files in the
+	build directory:
+      </para>
+
+      <variablelist>
+	<varlistentry>
+	  <term><filename>config.h</filename></term>
+	  <listitem>
+	    <para> A C/C++ header file describing the capabilities
+	      of the system. For our imaginary debugging library
+	      the C header file might look like this:
+	    </para>
+
+<programlisting>
+/* Generated automatically by make+. */
+
+#ifndef MP_CONFIG_H
+#define MP_CONFIG_H
+
+#define PACKAGE "foo"
+#define VERSION "0.0.1"
+#define HAVE_LIBBFD 1
+#define HAVE_BACKTRACE 1
+
+#endif /* MP_CONFIG_H */
+</programlisting>
+
+	    <para>
+	      Happily we can see that this platform has both the
+	      required GNU bfd and the optional <function>backtrace</function>
+	      function.
+	    </para>
+	  </listitem>
+	</varlistentry>
+
+	<varlistentry>
+	  <term><filename>config.mk</filename></term>
+	  <listitem>
+	    <para> This file is a <filename>Makefile</filename>
+	      fragment which is included directly the next time
+	      that <application>make+</application> runs (ie. it
+	      is included when we do the compile, test and
+	      install steps).
+	    </para>
+
+	    <para>
+	      The purpose of this file is threefold. Firstly to
+	      define the <envar>LIBS</envar> variable, which
+	      is built on the fly as a result of detecting
+	      required and optional libraries. Secondly to
+	      save the installation paths (the <envar>prefix</envar>
+	      and related paths). Thirdly to save the results
+	      of the configuration tests in a way which is accessible
+	      to the <filename>Makefile+</filename>.
+	    </para>
+
+	    <para>
+	      An extract from the <filename>config.mk</filename>
+	      file for our fictional debugging library:
+	    </para>
+
+<programlisting>
+prefix     = /usr
+bindir     = /usr/bin
+sbindir    = /usr/sbin
+libexecdir = /usr/libexec
+  #
+  # many lines omitted
+  #
+LIBS       = -lbfd
+
+HAVE_LIBBFD = 1
+HAVE_BACKTRACE = 1
+</programlisting>
+
+	  </listitem>
+	</varlistentry>
+
+	<varlistentry>
+	  <term><filename>config.log</filename></term>
+	  <listitem>
+	    <para>
+	      This file logs every command issued during the
+	      configuration step, and is very useful for
+	      debugging problems.
+	    </para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+
+      <para>
+	<application>make+</application>-enabled applications come
+	with a simple <command>configure</command> script. This is not
+	just a convenience (users are used to typing
+	<command>./configure --prefix=/usr</command>). It also removes
+	the old <filename>config.mk</filename> file before running
+	<command>make+ configure</command>, which is essential to
+	ensure that any previous installation paths do not
+	accidentally take precedence.
+      </para>
+
+    </sect1>
+
+    <sect1>
+      <title>Compiling and testing</title>
+
+      <para>
+	The application's <filename>Makefile+</filename> file
+	contains <filename>all</filename> and <filename>test</filename>
+	targets, and, just like an ordinary
+	<filename>Makefile</filename>, running
+	<command>make+ all</command> or <command>make+ test</command>
+	just executes these targets. However, recall from
+	the <link linkend="theory-of-operation">theory of
+	  operation chapter</link>, before the application's
+	<filename>Makefile+</filename> runs, the
+	<application>make+</application> library is loaded
+	first. Thus the application's <filename>all</filename> and
+	<filename>test</filename> targets may - if they want -
+	use macros and scripts from <application>make+</application>.
+      </para>
+
+      <para>
+	As an example, here is a typical <filename>test</filename>
+	target, which makes use of the <application>make+</application>
+	library's <envar>MP_RUN_TESTS</envar> macro:
+      </para>
+
+<programlisting>
+test: test_hash test_matvec test_pool
+        $(MP_RUN_TESTS) $^
+
+test_hash: test_hash.o
+        $(CC) $(CFLAGS) $^ -o $@ $(LIBS)
+test_matvec: test_matvec.o
+        $(CC) $(CFLAGS) $^ -o $@ $(LIBS)
+test_pool: test_pool.o
+        $(CC) $(CFLAGS) $^ -o $@ $(LIBS)
+</programlisting>
+
+    </sect1>
+
+    <sect1>
+      <title>Installing</title>
+
+      <para>
+	The application's <filename>Makefile+</filename> file contains
+	an ordinary <filename>install</filename> target which is run
+	directly when the user does <command>make+ install</command>.
+	The purpose of the <filename>install</filename> target is
+	to do whatever is necessary to install the program, but
+	in practice this means doing two things:
+      </para>
+
+      <itemizedlist>
+	<listitem>
+	<para> Making the installation directories. </para>
+	</listitem>
+	<listitem>
+	  <para> Copying the program into the installation directories. </para>
+	</listitem>
+      </itemizedlist>
+
+      <para>
+	Here is an example <filename>install</filename> target.
+	The first four commands are concerned with creating the
+	installation directories. The last five commands are concerned
+	with copying the built program (in this case, a library) to
+	the installation directories. Notice the use of several
+	<application>make+</application> macros.
+      </para>
+
+<programlisting>
+install:
+        install -d $(DESTDIR)$(libdir)
+        install -d $(DESTDIR)$(pkgincludedir)
+        install -d $(DESTDIR)$(man3dir)
+        install -d $(DESTDIR)$(datadir)/rws/symtabs/
+
+        $(MP_INSTALL_STATIC_LIB) libc2lib.a
+        $(MP_INSTALL_DYNAMIC_LIB) libc2lib.so
+        install -m 0644 $(HEADERS) $(DESTDIR)$(pkgincludedir)
+        install -m 0644 *.3        $(DESTDIR)$(man3dir)
+        install -m 0644 *.syms     $(DESTDIR)$(datadir)/rws/symtabs/
+</programlisting>
+
+      <para>
+	<filename>$(DESTDIR)</filename> must be prefixed onto every
+	install path. Normally it is empty, and so has no
+	effect. However when doing packaged builds (building RPMs for
+	example) it can be used to create a "fake root".
+      </para>
+
+      <para>
+	<filename>$(libdir)</filename>, etc., are standard paths
+	for particular directories. For example if the prefix
+	is <filename>/usr/local</filename> and we are building
+	on Linux, then
+	<filename>$(libdir)</filename> will expand to
+	<filename>/usr/local/lib</filename> and
+	<filename>$(man3dir)</filename> to
+	<filename>/usr/local/share/man/man3</filename>.
+      </para>
+
+    </sect1>
+
+  </chapter>
+
+  <chapter>
+    <title>Converting a package to use <application>make+</application></title>
+
+    <para>
+      Converting a package to use <application>make+</application>
+      is simple in principle. Step one is to create a file
+      called <filename>Makefile+</filename> and place it in
+      the top level directory of your package. Step two is
+      to remove whatever existing build system you were
+      using before - <filename>Makefile</filename>,
+      <filename>configure.in</filename>, <filename>config.*</filename>,
+      <filename>Makefile.am</filename> and so on. Of course
+      step two is optional!
+    </para>
+
+    <para>
+      <application>make+</application> comes with a handy
+      shell script called <command>make+-skeleton</command>
+      which can help you to create your <filename>Makefile+</filename>
+      file. You should run this in the top-level directory
+      of your package. A typical interaction will go like this:
+    </para>
+
+    <screen>
+<prompt>$</prompt> <command>make+-skeleton</command>
+<computeroutput>
+What is the name of your package? <userinput>foo</userinput>
+
+Now I'm going to ask you for the initial version number for this
+package. Version numbers have two parts: the MAJOR part and the
+MINOR part.
+
+The MAJOR part is a single number (eg 3). It is used (for example)
+for versioning libraries.
+
+The MINOR part is two numbers separated by a single DOT (eg 1.0)
+This is the incremental release of the library.
+
+If you library is version 3.1.0 then the MAJOR part would be
+  3
+and the MINOR part would be
+  1.0
+
+What is the MAJOR part of the version? <userinput>0</userinput>
+What is the MINOR part of the version? <userinput>0.1</userinput>
+
+I've written a Makefile+ file for you. You'll need to edit this file.
+Start by searching for all the 'XXX's and replacing them as necessary.
+</computeroutput>
+    </screen>
+
+    <para>
+      This creates the initial <filename>Makefile+</filename>
+      for a package called <filename>foo</filename> at
+      version 0.0.1. The <filename>Makefile+</filename> file
+      will start like this:
+    </para>
+
+    <example>
+      <title><filename>Makefile+</filename> skeleton file</title>
+<programlisting>
+# -*- Makefile -*-
+#
+# This is a make+ file. Make+ is a set of scripts which enhance GNU
+# make and let you build RPMs, and other package types with just one
+# control file.  To build this package you will need to download make+
+# from this site: http://www.annexia.org/freeware/makeplus/
+
+PACKAGE         := foo
+VERSION_MAJOR   := 0
+VERSION_MINOR   := 0.1
+VERSION         := $(VERSION_MAJOR).$(VERSION_MINOR)
+
+SUMMARY         := XXX A ONE LINE SUMMARY OF YOUR PACKAGE
+COPYRIGHT       := XXX ONE LINE COPYRIGHT OR LICENSE
+AUTHOR          := XXX YOUR NAME AND EMAIL ADDRESS
+</programlisting>
+    </example>
+
+    <para>
+      Your first step should be to edit this file, search through for
+      <literal>XXX</literal> and replace these as desired. (The
+      following sections will help you to write each part of the
+      file).
+    </para>
+
+    <para>
+      You should familiarise yourself with the
+      <link linkend="theory-of-operation">theory
+	of operation of <application>make+</application></link>
+      too, particularly remembering that the
+      <filename>Makefile+</filename> rules are run
+      in the build subdirectory, not in the source
+      directory.
+    </para>
+
+    <sect1>
+      <title>Configuration</title>
+
+
+    </sect1>
+
+
+
+
+
+
+
+  </chapter>
+
+
+</book>

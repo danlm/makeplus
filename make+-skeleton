@@ -1,0 +1,135 @@
+#!/bin/sh
+#
+# This is make+. Make+ is a set of scripts which enhance GNU make and
+# let ou build RPMs, and other packages types with just one control
+# file. Read more at http://www.annexia.org/freeware/makeplus/
+#
+# The original author is Richard W.M. Jones <rich@annexia.org>.
+#
+# This software has been explicitly placed in the PUBLIC DOMAIN.  You
+# do not need any sort of license or agreement to use or copy this
+# software. You may also copyright this software yourself, and/or
+# relicense it under any terms you want, at any time and at no cost.
+# This allows you (among other things) to include this software with
+# other packages so that the user does not need to download and
+# install make+ separately.
+
+set -e
+
+# Check that either MAKEPLUS_HOME or /etc/make+.conf exists, and run it.
+if [ "x$MAKEPLUS_HOME" = "x" ]; then
+    for d in /etc /usr/etc /usr/local/etc; do
+	if [ -f $d/make+.conf ]; then
+	    . $d/make+.conf
+	    break
+	fi
+    done
+fi
+
+# Overwrite 'configure' with the latest version. This file is never
+# important, even in autoconf-based installations.
+cp $MAKEPLUS_HOME/configure .
+chmod 0755 configure
+
+# Check 'Makefile+' does not exist in the current directory.
+if [ -f "Makefile+" ]; then
+    echo "There is already a file 'Makefile+' in the current directory."
+    echo "I won't overwrite this file. Remove this file and rerun me."
+    exit 1
+fi
+
+# Get the name of the package.
+echo -n "What is the name of your package? "
+read PACKAGE
+
+# Get the version number.
+echo
+echo "Now I'm going to ask you for the initial version number for this"
+echo "package. Version numbers have two parts: the MAJOR part and the"
+echo "MINOR part."
+echo
+echo "The MAJOR part is a single number (eg 3). It is used (for example)"
+echo "for versioning libraries."
+echo
+echo "The MINOR part is two numbers separated by a single DOT (eg 1.0)"
+echo "This is the incremental release of the library."
+echo
+echo "If you library is version 3.1.0 then the MAJOR part would be"
+echo "  3"
+echo "and the MINOR part would be"
+echo "  1.0"
+echo
+
+echo -n "What is the MAJOR part of the version? "
+read VERSION_MAJOR
+
+echo -n "What is the MINOR part of the version? "
+read VERSION_MINOR
+
+# Create the Makefile+ file.
+
+cat > Makefile+ <<EOF
+# -*- Makefile -*-
+#
+# This is a make+ file. Make+ is a set of scripts which enhance GNU
+# make and let you build RPMs, and other package types with just one
+# control file.  To build this package you will need to download make+
+# from this site: http://www.annexia.org/freeware/makeplus/
+
+PACKAGE		:= $PACKAGE
+VERSION_MAJOR	:= $VERSION_MAJOR
+VERSION_MINOR 	:= $VERSION_MINOR
+VERSION		:= \$(VERSION_MAJOR).\$(VERSION_MINOR)
+
+SUMMARY		:= XXX A ONE LINE SUMMARY OF YOUR PACKAGE
+COPYRIGHT	:= XXX ONE LINE COPYRIGHT OR LICENSE
+AUTHOR		:= XXX YOUR NAME AND EMAIL ADDRESS
+
+define DESCRIPTION
+XXX A FEW PARAGRAPHS ABOUT WHAT YOUR PACKAGE DOES
+endef
+
+#RPM_REQUIRES	:=
+RPM_GROUP	:= Development/Libraries
+
+CFLAGS		+= -Wall -Werror -g -O2
+
+all:	build
+
+# XXX MODIFY THE FOLLOWING TO CONFIGURE YOUR PACKAGE
+configure:
+	\$(MP_CONFIGURE_START)
+	\$(MP_CHECK_HEADERS) string.h unistd.h
+	\$(MP_CONFIGURE_END)
+
+build:
+# XXX ADD CODE HERE TO BUILD YOUR PACKAGE
+
+test: XXX LIST OF TEST PROGRAMS
+	\$(MP_RUN_TESTS) $^
+
+# XXX MODIFY THE FOLLOWING CODE TO INSTALL YOUR PACKAGE
+# XXX ALWAYS REMEMBER TO PREFIX INSTALLATION PATHS WITH \$(DESTDIR)
+install:
+	install -d \$(DESTDIR)\$(bindir)
+	install -m 0755 my_program \$(DESTDIR)\$(bindir)
+
+define WEBSITE
+<html>
+XXX PUT YOUR WEBSITE HERE. IF YOU DON\'T WANT TO MANAGE A WEBSITE WITH
+XXX MAKE+ THEN JUST DELETE THIS SECTION AND THE upload_website RULE.
+</html>
+endef
+
+upload_website:
+	scp \$(PACKAGE)-\$(VERSION).tar.gz \$(PACKAGE)-\$(VERSION)-1.*.rpm \\
+	\$(PACKAGE)-\$(VERSION).bin.tar.gz \\
+	you@yourmachine.example.com:/var/www/html/\$(PACKAGE)/files
+	scp index.html you@yourmachine.example.com:/var/www/html/\$(PACKAGE)/
+
+.PHONY:	build configure test upload_website
+EOF
+
+echo
+echo "I've written a Makefile+ file for you. You'll need to edit this file."
+echo "Start by searching for all the 'XXX's and replacing them as necessary."

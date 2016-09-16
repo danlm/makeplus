@@ -1,0 +1,80 @@
+Installing make+
+----------------
+
+Make+ is entirely self-hosting! But don't worry, it's easy to build and
+install make+ even if you don't already have make+ installed. Follow the
+steps below to build, install or make a package.
+
+1. Quick installation for the impatient:
+
+	MAKEPLUS_HOME=`pwd`; export MAKEPLUS_HOME
+	PATH=$MAKEPLUS_HOME:$PATH
+	./configure [--prefix=/usr --sysconfdir=/etc]
+	make+
+	su
+	make+ install
+	exit
+	unset MAKEPLUS_HOME
+
+Step by step instructions follow:
+
+2. Set the MAKEPLUS_HOME environment variable to point to the make+
+   source files.
+
+   Make sure you are in the unpacked make+ source directory and type:
+
+	MAKEPLUS_HOME=`pwd`
+	export MAKEPLUS_HOME
+
+   If you are using CSH, type:
+
+	setenv MAKEPLUS_HOME `pwd`
+
+   Note that those are backquotes (`) around the pwd.
+
+   To check this, type:
+
+	echo $MAKEPLUS_HOME
+
+   which should show the full path to the unpacked source directory.
+
+   Similarly you also need to update your PATH so that the 'make+'
+   program can be found:
+
+	PATH=$MAKEPLUS_HOME:$PATH
+
+3. Configure the paths used by make+. Normally you would do:
+
+	./configure
+
+   This will install make+ entirely under the /usr/local directory. To
+   install under /usr and with the configuration file in /etc, do:
+
+	./configure --prefix=/usr --sysconfdir=/etc
+
+4. Run make+ to have it build itself:
+
+	make+
+
+5. To perform a straightforward install, you'll need to be root (but
+   you don't need to be root yet if all you want to do is build an RPM).
+   To become root, type:
+
+	su
+
+   you will probably be asked for the root password.
+
+6. Type:
+
+	make+ install
+	exit
+
+7. If you prefer, you can build an RPM of make+:
+
+	make+ rpm
+
+   The RPM will end up under build-*/makeplus-*.rpm
+
+8. Remove the MAKEPLUS_HOME environment variable.
+
+	unset MAKEPLUS_HOME

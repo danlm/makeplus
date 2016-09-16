@@ -1,0 +1,16 @@
+It is possible to install and use make+ on Solaris. Make sure, however,
+that you have installed the GNU software from http://www.sunfreeware.com/,
+in particular these packages:
+
+make
+fileutils
+gzip
+bash
+grep
+
+You may also need to ensure that the GNU versions of the tools are first
+in the PATH, for example by doing:
+
+export PATH=/usr/local/bin:$PATH
+
+Rich, 2003/01/14

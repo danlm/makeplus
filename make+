@@ -1,0 +1,95 @@
+#!/bin/sh
+#
+# This is make+. Make+ is a set of scripts which enhance GNU make and
+# let you build RPMs, and other packages types with just one control
+# file. Read more at http://www.annexia.org/freeware/makeplus/
+#
+# The original author is Richard W.M. Jones <rich@annexia.org>.
+#
+# This software has been explicitly placed in the PUBLIC DOMAIN.  You
+# do not need any sort of license or agreement to use or copy this
+# software. You may also copyright this software yourself, and/or
+# relicense it under any terms you want, at any time and at no cost.
+# This allows you (among other things) to include this software with
+# other packages so that the user does not need to download and
+# install make+ separately.
+
+# The control file. XXX Parse and remove the -f option.
+_mp_makefile="Makefile+"; export _mp_makefile
+
+# Check the control file exists in the current directory. You can only
+# run make+ from the top level source directory, the one which contains
+# Makefile+. You should not be doing anything recursive with make+.
+if [ ! -r "$_mp_makefile" ]; then
+    echo "make+: $_mp_makefile: file not found or not readable"
+    echo "You should always run make+ from the top-level source"
+    echo "directory, the one which contains the Makefile+ file."
+    exit 1
+fi
+
+# Find a suitable copy of GNU make. You can override this test
+# by setting the $MAKE option.
+if [ "x$MAKE" = "x" ]; then
+    if sh -c 'gmake --version' 2>/dev/null | grep -q 'GNU Make'; then
+	MAKE=gmake
+    elif sh -c 'make --version' 2>/dev/null | grep -q 'GNU Make'; then
+	MAKE=make
+    else
+	echo "make+: I cannot find a copy of GNU make. Please set the \$MAKE"
+	echo "environment variable to point to the GNU make binary."
+    fi
+fi
+
+# Check for a sufficiently recent version of GNU make.
+if $MAKE --version | grep -q '^GNU Make .*3\.'; then
+    # make is up-to-date
+    :
+else
+    echo "make+: Your 'make' is not GNU make (or not a recent version)"
+    echo "Please install a recent version of GNU make."
+    exit 1
+fi
+
+# Check that either MAKEPLUS_HOME or /etc/make+.conf exists, and run it.
+if [ "x$MAKEPLUS_HOME" = "x" ]; then
+    for d in /etc /usr/etc /usr/local/etc; do
+	if [ -f $d/make+.conf ]; then
+	    . $d/make+.conf
+	    break
+	fi
+    done
+fi
+
+# Check MAKEPLUS_HOME looks reasonable.
+if [ ! -f "$MAKEPLUS_HOME/main.mk" ]; then
+    echo "make+: MAKEPLUS_HOME environment variable not set correctly."
+    echo "This environment variable should point to the installation"
+    echo "directory for make+ (eg. /usr/share/makeplus). You would normally"
+    echo "do this by creating a file called /etc/make+.conf containing"
+    echo "  export MAKEPLUS_HOME=/usr/share/makeplus"
+    echo "or you can set it as an environment variable each time you run"
+    echo "make+."
+    exit 1
+fi
+
+# Set MAKEFILES.
+MAKEFILES=$MAKEPLUS_HOME/main.mk; export MAKEFILES
+
+# Construct a suitable target architecture.
+# XXX Cross compiling.
+arch=`uname -m`
+os=`uname -s | tr 'A-Z' 'a-z'`
+hw=`( uname -i 2>/dev/null || echo "unknown" ) | tr -cd 'A-Za-z0-9'`
+_mp_builddir=build-$arch-$hw-$os; export _mp_builddir
+
+# Create the build directory.
+# XXX
+mkdir -p $_mp_builddir
+cd $_mp_builddir
+
+# Create the directories under the build directory.
+(cd .. && find . -type d -a \! -name CVS) | grep -v $_mp_builddir |
+    xargs mkdir -p
+
+# Run GNU make from the build directory.
+$MAKE -f ../$_mp_makefile "$@"

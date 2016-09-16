@@ -1,0 +1,30 @@
+<refentry id="make+">
+  <refmeta>
+    <refentrytitle>make+</refentrytitle>
+    <manvolnum>1</manvolnum>
+  </refmeta>
+
+  <refnamediv>
+    <refname>make+</refname>
+    <refpurpose>build system</refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>make+</command>
+      <!--<arg choice="opt">
+	<option>abc</option>
+      </arg>-->
+      <arg choice="opt" rep="repeat">target</arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1><title>Description</title>
+    <para>
+      For each file that is a directory, <command>ls</command> lists
+      the contents of the directory; for each file that is an ordinary
+      file, <command>ls</command> repeats its name and any other
+      information requested.
+    </para>
+  </refsect1>
+</refentry>
